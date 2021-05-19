@@ -71,7 +71,6 @@ xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
 
 def mix_single_column(a):
-    # Sec 4.1.2 in The Design of Rijndael
     t = a[0] ^ a[1] ^ a[2] ^ a[3]
     u = a[0]
     a[0] ^= t ^ xtime(a[0] ^ a[1])
@@ -86,7 +85,6 @@ def mix_columns(s):
 
 
 def inv_mix_columns(s):
-    # Sec 4.1.3 in The Design of Rijndael
     for i in range(4):
         u = xtime(xtime(s[i][0] ^ s[i][2]))
         v = xtime(xtime(s[i][1] ^ s[i][3]))
@@ -159,14 +157,9 @@ class AES:
         self._key_matrices = self._expand_key(master_key)
 
     def _expand_key(self, master_key):
-        """
-        Expands and returns a list of key matrices for the given master_key.
-        """
-        # Initialize round keys with raw key material.
         key_columns = bytes2matrix(master_key)
         iteration_size = len(master_key) // 4
 
-        # Each iteration has exactly as many columns as the key material.
         columns_per_iteration = len(key_columns)
         i = 1
         while len(key_columns) < (self.n_rounds + 1) * 4:
@@ -191,13 +184,9 @@ class AES:
             word = xor_bytes(word, key_columns[-iteration_size])
             key_columns.append(word)
 
-        # Group key words in 4x4 byte matrices.
         return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
 
     def encrypt_block(self, plaintext):
-        """
-        Encrypts a single block of 16 byte long plaintext.
-        """
         assert len(plaintext) == 16
 
         plain_state = bytes2matrix(plaintext)
@@ -217,9 +206,6 @@ class AES:
         return matrix2bytes(plain_state)
 
     def decrypt_block(self, ciphertext):
-        """
-        Decrypts a single block of 16 byte long ciphertext.
-        """
         assert len(ciphertext) == 16
 
         cipher_state = bytes2matrix(ciphertext)
@@ -426,10 +412,6 @@ HMAC_SIZE = 32
 
 
 def get_key_iv(password, salt, workload=100000):
-    """
-    Stretches the password and extracts an AES key, an HMAC key and an AES
-    initialization vector.
-    """
     stretched = pbkdf2_hmac('sha256', password, salt, workload, AES_KEY_SIZE + IV_SIZE + HMAC_KEY_SIZE)
     aes_key, stretched = stretched[:AES_KEY_SIZE], stretched[AES_KEY_SIZE:]
     hmac_key, stretched = stretched[:HMAC_KEY_SIZE], stretched[HMAC_KEY_SIZE:]
@@ -438,12 +420,6 @@ def get_key_iv(password, salt, workload=100000):
 
 
 def encrypt(key, plaintext, workload=100000):
-    """
-    Encrypts `plaintext` with `key` using AES-128, an HMAC to verify integrity,
-    and PBKDF2 to stretch the given key.
-
-    The exact algorithm is specified in the module docstring.
-    """
     if isinstance(key, str):
         key = key.encode('utf-8')
     if isinstance(plaintext, str):
@@ -495,30 +471,30 @@ def benchmark():
 
 
 __all__ = [encrypt, decrypt, AES]
-
-if __name__ == '__main__':
-    import sys
-    write = lambda b: sys.stdout.buffer.write(b)
-    read = lambda: sys.stdin.buffer.read()
-
-    if len(sys.argv) < 2:
-        print('Usage: ./aes.py encrypt "key" "message"')
-        print('Running tests...')
-        from tests import *
-        run()
-    elif len(sys.argv) == 2 and sys.argv[1] == 'benchmark':
-        benchmark()
-        exit()
-    elif len(sys.argv) == 3:
-        text = read()
-    elif len(sys.argv) > 3:
-        text = ' '.join(sys.argv[2:])
-
-    if 'encrypt'.startswith(sys.argv[1]):
-        write(encrypt(sys.argv[2], text))
-    elif 'decrypt'.startswith(sys.argv[1]):
-        write(decrypt(sys.argv[2], text))
-    else:
-        print('Expected command "encrypt" or "decrypt" in first argument.')
-
-    # encrypt('my secret key', b'0' * 1000000) # 1 MB encrypted in 20 seconds.
+#
+# if __name__ == '__main__':
+#     import sys
+#     write = lambda b: sys.stdout.buffer.write(b)
+#     read = lambda: sys.stdin.buffer.read()
+#
+#     if len(sys.argv) < 2:
+#         print('Usage: ./aes.py encrypt "key" "message"')
+#         print('Running tests...')
+#         from tests import *
+#         run()
+#     elif len(sys.argv) == 2 and sys.argv[1] == 'benchmark':
+#         benchmark()
+#         exit()
+#     elif len(sys.argv) == 3:
+#         text = read()
+#     elif len(sys.argv) > 3:
+#         text = ' '.join(sys.argv[2:])
+#
+#     if 'encrypt'.startswith(sys.argv[1]):
+#         write(encrypt(sys.argv[2], text))
+#     elif 'decrypt'.startswith(sys.argv[1]):
+#         write(decrypt(sys.argv[2], text))
+#     else:
+#         print('Expected command "encrypt" or "decrypt" in first argument.')
+#
+#     # encrypt('my secret key', b'0' * 1000000) # 1 MB encrypted in 20 seconds.
