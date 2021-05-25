@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import reconstructor
 
 from app.app import db, aes
@@ -49,7 +50,7 @@ class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    address = db.Column(db.Text, nullable=False)
+    _address = db.Column('address', db.Text, nullable=False)
     contacts = db.Column(db.Integer, nullable=False)
     contract_number = db.Column(db.Integer)
     id_category = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
@@ -61,12 +62,10 @@ class Supplier(db.Model):
 
     @reconstructor
     def init_on_load(self):
-        self.id = id
         self.name = self.encrypt(self.name)
-        self.address = self.encrypt(self.address)
+        self._address = self.encrypt(self._address)
         self.contacts = self.encrypt(self.contacts)
         self.contract_number = self.encrypt(self.contract_number)
-        self.id_category = self.id_category
 
     def encrypt(self, value):
         key = b'1234567890123456'
@@ -77,11 +76,24 @@ class Supplier(db.Model):
         key = b'1234567890123456'
         return aes.decrypt(key, value)
 
-    def decrypt(self):
-        self.name = self._decrypt(self.name)
-        self.address = self._decrypt(self.address)
-        self.contacts = self._decrypt(self.contacts)
-        self.contract_number = self._decrypt(self.contract_number)
+    # def decrypt(self):
+    #     self.name = self._decrypt(self.name)
+    #     self.address = self._decrypt(self.address)
+    #     self.contacts = self._decrypt(self.contacts)
+    #     self.contract_number = self._decrypt(self.contract_number)
+
+    @hybrid_property
+    def address(self):
+        return self._address
+
+    @address.getter
+    def address(self):
+        print('1', self._address)
+        return self._decrypt(self._address)
+
+    @address.setter
+    def address(self, value):
+        self._address = value
 
     def __str__(self):
         return self.name
