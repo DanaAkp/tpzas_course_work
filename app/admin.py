@@ -1,5 +1,6 @@
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
+from app.models import EncryptedString
 
 
 class ModelForAdmin(ModelView):
@@ -20,6 +21,10 @@ class SaleModel(ModelView):
     #     self.model.decrypt()
         # self.model.set_date_sale(form.date_sale.data)
         # self.model.id_product = form.id_product.data
+
+
+class PurchasingDepartment(ModelView):
+    form_choices = {'address': EncryptedString}
 
 
 

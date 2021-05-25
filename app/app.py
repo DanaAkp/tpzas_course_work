@@ -42,7 +42,7 @@ class DashboardView(AdminIndexView):
 admin = Admin(app, name='Database', template_mode='bootstrap3', index_view=DashboardView())
 
 
-from app.admin import WarehouseModel, ModelForAdmin, SaleModel
+from app.admin import WarehouseModel, ModelForAdmin, SaleModel, PurchasingDepartment
 db.create_all()
 
 admin.add_views(ModelForAdmin(User, db.session))

@@ -1,9 +1,37 @@
 from flask_login import UserMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import reconstructor
+from sqlalchemy.sql.type_api import UserDefinedType, TypeDecorator
+from sqlalchemy.sql.sqltypes import String
 
 from app.app import db, aes
 from werkzeug.security import generate_password_hash, check_password_hash
+
+
+class EncryptedString(TypeDecorator):
+    impl = String
+    print(1)
+
+    def process_bind_param(self, value, dialect):
+        print(2)
+        return self.encrypt(value)
+
+    def process_result_value(self, value, dialect):
+        print(3)
+        return self.decrypt(value)
+
+    def copy(self, **kw):
+        return EncryptedString(self.impl.length)
+
+    def encrypt(self, value):
+        key = b'1234567890123456'
+        value = bytes(str(value), 'utf-8')
+        return aes.encrypt(key, value)
+
+    def decrypt(self, value):
+        key = b'1234567890123456'
+        print('aes', type(aes.decrypt(key, value)))
+        return aes.decrypt(key, value).decode('utf-8')
 
 
 class Product(db.Model):
@@ -50,50 +78,13 @@ class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    _address = db.Column('address', db.Text, nullable=False)
+    print(4)
+    address = db.Column(EncryptedString(100), nullable=False)
+    print(5)
     contacts = db.Column(db.Integer, nullable=False)
     contract_number = db.Column(db.Integer)
     id_category = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     product = db.relationship('Product', backref='suppliers')
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.init_on_load()
-
-    @reconstructor
-    def init_on_load(self):
-        self.name = self.encrypt(self.name)
-        self._address = self.encrypt(self._address)
-        self.contacts = self.encrypt(self.contacts)
-        self.contract_number = self.encrypt(self.contract_number)
-
-    def encrypt(self, value):
-        key = b'1234567890123456'
-        value = bytes(str(value), 'utf-8')
-        return aes.encrypt(key, value)
-
-    def _decrypt(self, value):
-        key = b'1234567890123456'
-        return aes.decrypt(key, value)
-
-    # def decrypt(self):
-    #     self.name = self._decrypt(self.name)
-    #     self.address = self._decrypt(self.address)
-    #     self.contacts = self._decrypt(self.contacts)
-    #     self.contract_number = self._decrypt(self.contract_number)
-
-    @hybrid_property
-    def address(self):
-        return self._address
-
-    @address.getter
-    def address(self):
-        print('1', self._address)
-        return self._decrypt(self._address)
-
-    @address.setter
-    def address(self, value):
-        self._address = value
 
     def __str__(self):
         return self.name
@@ -113,25 +104,6 @@ class Sale(db.Model):
     id_product = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, primary_key=True)
     date_sale = db.Column(db.DateTime, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-
-    def __init__(self, **kwargs):
-        super().__init(**kwargs)
-        self.init_load()
-
-    @reconstructor
-    def init_load(self):
-        self.id_product = self.id_product
-        self.date_sale = self.encrypt(self.date_sale)
-        self.amount = self.encrypt(self.amount)
-
-    def encrypt(self, value):
-        key = b'1234567890123456'
-        value = bytes(str(value), 'utf-8')
-        return aes.encrypt(key, value)
-
-    def decrypt(self, value):
-        key = b'1234567890123456'
-        return aes.decrypt(key, value)
 
 
 class Role(db.Model):
