@@ -55,28 +55,33 @@ class Supplier(db.Model):
     id_category = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     product = db.relationship('Product', backref='suppliers')
 
-    def __init__(self, id, name, address, contacts, contract_number, id_category):
-        self.id = id
-        self.name = self.encrypt(name)
-        self.address = self.encrypt(address)
-        self.contacts = self.encrypt(contacts)
-        self.contract_number = self.encrypt(contract_number)
-        self.id_category = id_category
-
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.init_on_load()
 
     @reconstructor
     def init_on_load(self):
-        pass
+        self.id = id
+        self.name = self.encrypt(self.name)
+        self.address = self.encrypt(self.address)
+        self.contacts = self.encrypt(self.contacts)
+        self.contract_number = self.encrypt(self.contract_number)
+        self.id_category = self.id_category
 
     def encrypt(self, value):
         key = b'1234567890123456'
-        value = bytes(str(value))
+        value = bytes(str(value), 'utf-8')
         return aes.encrypt(key, value)
 
-    def decrypt(self, value):
+    def _decrypt(self, value):
         key = b'1234567890123456'
         return aes.decrypt(key, value)
+
+    def decrypt(self):
+        self.name = self._decrypt(self.name)
+        self.address = self._decrypt(self.address)
+        self.contacts = self._decrypt(self.contacts)
+        self.contract_number = self._decrypt(self.contract_number)
 
     def __str__(self):
         return self.name
@@ -97,18 +102,24 @@ class Sale(db.Model):
     date_sale = db.Column(db.DateTime, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, id_product, date_sale, amount):
-        self.id_product = id_product
-        self.date_sale = self.encrypt(date_sale)
-        self.amount = self.encrypt(amount)
+    def __init__(self, **kwargs):
+        super().__init(**kwargs)
+        self.init_load()
+
+    @reconstructor
+    def init_load(self):
+        self.id_product = self.id_product
+        self.date_sale = self.encrypt(self.date_sale)
+        self.amount = self.encrypt(self.amount)
 
     def encrypt(self, value):
         key = b'1234567890123456'
+        value = bytes(str(value), 'utf-8')
         return aes.encrypt(key, value)
 
-    def decrypt(self):
+    def decrypt(self, value):
         key = b'1234567890123456'
-        return aes.decrypt(key, self.date_sale), aes.decrypt(key, self.amount)
+        return aes.decrypt(key, value)
 
 
 class Role(db.Model):

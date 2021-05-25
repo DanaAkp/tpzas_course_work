@@ -15,10 +15,11 @@ class WarehouseModel(ModelView):
 
 
 class SaleModel(ModelView):
-    pass
-    # def create_model(self, form):
-    #     self.model.set_date_sale(form.date_sale.data)
-    #     # self.model.id_product = form.id_product.data
+    # pass
+    def create_model(self, form):
+        self.model.decrypt()
+        # self.model.set_date_sale(form.date_sale.data)
+        # self.model.id_product = form.id_product.data
 
 
 
