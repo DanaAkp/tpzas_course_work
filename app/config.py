@@ -11,11 +11,15 @@ class Config(object):
     STATIC_FOLDER = os.path.join(PUBLIC_PATH, 'static')
     MEDIA_IMAGES_PATH = os.path.join('media', 'images')
 
-    SQLALCHEMY_DATABASE_URI = "sqlite:///%s/develop.db" % DATA_PATH
+    # SQLALCHEMY_DATABASE_URI = "postgresql://postgres:postgres@localhost:5432///%s/develop_db" % DATA_PATH
+    # SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:5432/develop_db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///%s/develop.db' % DATA_PATH
 
 
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "sqlite:///%s/develop.db" % Config.DATA_PATH
+    # SQLALCHEMY_DATABASE_URI = "postgresql://postgres:postgres@localhost:5432///%s/develop_db" % Config.DATA_PATH
+    # SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:5432/develop_db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///%s/develop.db' % Config.DATA_PATH
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # EXPLAIN_TEMPLATE_LOADING = True
     DEBUG = True
